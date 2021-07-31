@@ -1,10 +1,20 @@
 version: "3"
 
 services:
-    primeira-api:
-        build: .
-        command: npm start
-        ports: 
-            - "3000:3000"
-        volumes:
-            - .:/usr/primeira-api
+    db:
+        image: postgres:13-alpine
+        env_file:
+            ./.env
+        # volumes:
+        #     - ./pgdata:/data/primeira-api/postgres
+        ports:
+            - "5432:5432"
+    # web:
+    #     build: .
+    #     command: npm start
+    #     ports: 
+    #         - "3000:3000"
+    #     volumes:
+    #         - .:/usr/primeira-api
+    #     depends_on:
+    #         - "db"
