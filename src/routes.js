@@ -1,46 +1,62 @@
+const connect = require("./db.js");
 const express = require('express');
 const routes = express.Router();
 
-let db = [
-    {Ativo: 'Ativo1', Max: 20, Min: 40},
-    {Ativo: 'Ativo2', Max: 20, Min: 40},
-    {Ativo: 'Ativo3', Max: 20, Min: 40}
-]
-
-routes.get('/', (req, res) => {
+routes.get('/ativo', async (req, res) => {
+    const conn = await connect();
+    let db = (await conn.query('SELECT * FROM ativos')).rows;
     return res.json(db);
 });
 
-routes.post('/add', (req, res) => {
-    const body = req.body;
-    if(!body)
+routes.get('/ativo/:id', async (req, res) => {
+    const conn = await connect();
+    const id = req.params.id;
+    let db = (await conn.query(`SELECT * FROM ativos WHERE id = ${id}`)).rows;
+    if(!db[0]){
+        return res.status(404).end();
+    }
+    return res.json(db);
+});
+
+routes.post('/ativo', async (req, res) => {
+    const conn = await connect();
+    const name = req.body.name;
+    const max = req.body.max;
+    const min = req.body.min;
+    if(!name || !max || !min)
         return res.status(400).end();
-    
-    db.push(body);
-    return res.json(body);
+    try{
+        await conn.query(`INSERT INTO ativos (name, max, min) VALUES('${name}', ${max}, ${min})`);
+        return res.status(201).end();
+    } catch{
+        return res.status(400).end();
+    } 
 });
 
-routes.delete('/:ativo', (req, res) => {
-    let newDb = [];
-    let ativo = req.params.ativo;
-    for(let i = 0; i < db.length; i++){
-        if(db[i].Ativo != ativo)
-            newDb.push(db[i]);
+routes.delete('/ativo/:id', async (req, res) => {
+    const conn = await connect();
+    let id = req.params.id;
+    try{
+        await conn.query(`DELETE FROM ativos WHERE id = ${id}`)
+        return res.status(200).end();
+    } catch{
+        return res.status(400).end();
     }
-    db = newDb;
-    return res.json(db);
 });
-routes.put('/:ativo/:min/:max', (req, res) => {
-    let ativo = req.params.ativo;
-    let min = req.params.min;
-    let max = req.params.max;
-    for(let i = 0; i < db.length; i++){
-        if(db[i].Ativo === ativo){
-            db[i].Min = min;
-            db[i].Max = max;
-            break;
-        }
+
+routes.put('/ativo/:id', async (req, res) => {
+    const conn = await connect();
+    let id = req.params.id;
+    let min = req.body.min;
+    let max = req.body.max;
+    if(!min || !max)
+        return res.status(400).end();
+    try{
+        await conn.query(`UPDATE ativos SET (max, min) = (${max}, ${min}) WHERE id = ${id}`);
+        return res.status(200).end();
+    } catch{
+        return res.status(400).end();
     }
-    return res.json(db);
 });
+
 module.exports = routes;
